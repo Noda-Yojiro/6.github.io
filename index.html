@@ -1,0 +1,263 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF - 8">
+    <meta name="viewport" content="width=device - width, initial - scale = 1.0">
+    <title>Responsive and Auto - changing Images</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            margin: 0;
+            color: #fff;
+        }
+
+        h1 {
+            color: #36D;
+            font-size: 2rem;
+            font-weight: 600;
+        }
+
+        h1 span {
+            color: #BD53ED;
+            position: relative;
+        }
+
+        h1 span::before {
+            content: "";
+            height: 30px;
+            width: 2px;
+            position: absolute;
+            top: 50%;
+            right: -8px;
+            background: #BD53ED;
+            transform: translateY(-45%);
+            animation: blink 0.7s infinite;
+        }
+
+        h1 span.stop-blinking::before {
+            animation: none;
+        }
+
+        @keyframes blink {
+            50% {
+                opacity: 0
+            }
+        }
+
+        #country-info {
+            margin-top: 30px;
+        }
+
+        /* 设置背景容器的样式 */
+       .background-container {
+            width: 100%;
+            /* 根据需要调整高度 */
+            height: 100vh;
+            background-size: cover;
+            background-position: center;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+        }
+
+        /* 桌面端媒体查询 */
+        @media (min - width: 768px) {
+
+        }
+
+        /* 移动端媒体查询 */
+        @media (max - width: 480px) {
+
+        }
+    </style>
+</head>
+
+<body>
+    <!-- 背景容器 -->
+    <div id="responsiveBackground" class="background-container">
+        <h1>根据网络<span></span></h1>
+        <button onclick="getInfo()">获取当前地理位置信息</button>
+        <div id="location-info"></div>
+        <div id="country-info" style="color: #fff;"></div>
+        <div id="time-info"></div>
+        <div id="province-info"></div>
+        <div id="city-info"></div>
+        <div id="district-info"></div>
+        <div id="street-info"></div>
+    </div>
+    <script>
+        const desktopImages = ['1.png', '2.png', '3.png', '4.png', '5.png', '6.png', '7.png', '8.png', '9.png', '10.png']
+        const mobileImages = ['1.jpg', '2.jpg', '3.jpg', '4.jpg', '5.jpg', '6.jpg', '7.jpg', '8.jpg', '9.jpg', '10.jpg']
+        
+        //const desktopImages = ['1.jpg', '2.jpg', '3.jpg', '4.jpg', '5.jpg', '6.jpg', '7.jpg', '8.jpg', '9.jpg', '10.jpg']
+        //const mobileImages = ['1.png', '2.png', '3.png', '4.png', '5.png', '6.png', '7.png', '8.png', '9.png', '10.png']
+
+        let desktopIndex = 0;
+        let mobileIndex = 0;
+        // 预先加载图片
+        const preloadedDesktopImages = desktopImages.map(url => {
+            const img = new Image();
+            img.src = url;
+            return img;
+        });
+        const preloadedMobileImages = mobileImages.map(url => {
+            const img = new Image();
+            img.src = url;
+            return img;
+        });
+
+        function changeImage() {
+            const backgroundDiv = document.getElementById('responsiveBackground');
+            if (!backgroundDiv) {
+                console.error('Element with id "responsiveBackground" not found.');
+                return;
+            }
+            const img = new Image();
+            if (window.innerWidth >= 768) {
+                img.src = preloadedDesktopImages[desktopIndex].src;
+                img.onerror = function () {
+                    console.error('Desktop image load failed:', preloadedDesktopImages[desktopIndex].src);
+                };
+                img.onload = function () {
+                    backgroundDiv.style.backgroundImage = `url(${preloadedDesktopImages[desktopIndex].src})`;
+                    desktopIndex = (desktopIndex + 1) % desktopImages.length;
+                };
+            } else {
+                img.src = preloadedMobileImages[mobileIndex].src;
+                img.onerror = function () {
+                    console.error('Mobile image load failed:', preloadedMobileImages[mobileIndex].src);
+                };
+                img.onload = function () {
+                    backgroundDiv.style.backgroundImage = `url(${preloadedMobileImages[mobileIndex].src})`;
+                    mobileIndex = (mobileIndex + 1) % mobileImages.length;
+                };
+            }
+        }
+
+        const dynamicText = document.querySelector("h1 span");
+        const words = ["知道", "国家", "地区", "时间", "位置"];
+
+        // Variables to track the position and deletion status of the word
+        let wordIndex = 0;
+        let charIndex = 0;
+        let isDeleting = false;
+
+        const typeEffect = () => {
+            const currentWord = words[wordIndex];
+            const currentChar = currentWord.substring(0, charIndex);
+            dynamicText.textContent = currentChar;
+            dynamicText.classList.add("stop-blinking");
+
+            if (!isDeleting && charIndex < currentWord.length) {
+                // If condition is true, type the next character
+                charIndex++;
+                setTimeout(typeEffect, 200);
+            } else if (isDeleting && charIndex > 0) {
+                // If condition is true, remove the previous character
+                charIndex--;
+                setTimeout(typeEffect, 100);
+            } else {
+                // If word is deleted then switch to the next word
+                isDeleting = !isDeleting;
+                dynamicText.classList.remove("stop-blinking");
+                wordIndex = !isDeleting? (wordIndex + 1) % words.length : wordIndex;
+                setTimeout(typeEffect, 1200);
+            }
+        }
+
+        typeEffect();
+
+        setInterval(changeImage, 1000);
+
+        function getInfo() {
+            // 使用一个公开的IP地址查询API获取用户的IP地址
+            fetch('https://ipapi.co/json/')
+               .then((response) => {
+                    if (!response.ok) {
+                        throw new Error('Network response was not ok');
+                    }
+                    return response.json();
+                })
+               .then((data) => {
+                    // 解析API返回的数据，获取国家和地区信息
+                    const country = data.country_name;
+                    const region = data.region;
+
+                    // 更新页面显示国家和地区信息
+                    const countryInfoDiv = document.getElementById('country-info');
+                    if (countryInfoDiv) {
+                        countryInfoDiv.innerHTML = `
+                            <p>Country: ${country}</p>
+                            <p>Region: ${region}</p>
+                        `;
+                    }
+                })
+            //    .catch((error) => {
+            //         const countryInfoDiv = document.getElementById('country-info');
+            //         if (countryInfoDiv) {
+            //             countryInfoDiv.innerHTML = `<p>获取国家和地区信息失败：${error.message}</p>`;
+            //         }
+            //         console.error('获取国家和地区信息失败：', error);
+            //     });
+
+            // 更新当前时间、日期和秒数
+            function updateTime() {
+                const currentTime = new Date();
+                const year = currentTime.getFullYear();
+                const month = String(currentTime.getMonth() + 1).padStart(2, '0');
+                const day = String(currentTime.getDate()).padStart(2, '0');
+                const hour = String(currentTime.getHours()).padStart(2, '0');
+                const minute = String(currentTime.getMinutes()).padStart(2, '0');
+                const second = String(currentTime.getSeconds()).padStart(2, '0');
+
+                // 更新页面显示当前时间、日期和秒数
+                const timeInfoDiv = document.getElementById('time-info');
+                if (timeInfoDiv) {
+                    timeInfoDiv.innerHTML = `
+                        <p>Time: ${hour}:${minute}:${second}</p>
+                        <p>Date: ${year}-${month}-${day}</p>
+                    `;
+                }
+            }
+
+            // 初始化时间
+            updateTime();
+
+            // 每秒更新一次时间
+            setInterval(updateTime, 1000);
+
+            // 使用浏览器内置的Geolocation API获取经纬度
+            navigator.geolocation.getCurrentPosition(
+                (position) => {
+                    const latitude = position.coords.latitude;
+                    const longitude = position.coords.longitude;
+
+                    // 更新页面显示经纬度信息
+                    const locationInfoDiv = document.getElementById('location-info');
+                    if (locationInfoDiv) {
+                        locationInfoDiv.innerHTML = `
+                            <p>您所在的纬度：${latitude}</p>
+                            <p>您所在的经度：${longitude}</p>
+                        `;
+                    }
+                },
+                (error) => {
+                    const locationInfoDiv = document.getElementById('location-info');
+                    if (locationInfoDiv) {
+                        locationInfoDiv.innerHTML = `<p>获取经纬度信息失败：${error.message}</p>`;
+                    }
+                    console.error('获取经纬度信息失败：', error);
+                }
+            );
+        }
+    </script>
+</body>
+
+</html>
